@@ -14,6 +14,7 @@
     --text:#ece7d8; --muted:#a29f8d;
     --amber:#f2a900; --amber-dim:#6b4d00; --lcd:#14160f;
     --live:#6fe08a; --danger:#ff5a4d;
+    --cam:#4aa3ff; --cam-hi:#a9d6ff; --cam-lo:#1d5fb0; --cam-edge:#123f73;
     --level:0;
     color-scheme:dark;
   }
@@ -23,6 +24,7 @@
       --text:#23261d; --muted:#6a6755;
       --amber:#b87800; --amber-dim:#d8c48a; --lcd:#1f2218;
       --live:#1f9d45; --danger:#d1382b;
+      --cam:#1f78e0; --cam-hi:#8cc2ff; --cam-lo:#17559f; --cam-edge:#0f3a70;
       color-scheme:light;
     }
   }
@@ -56,7 +58,7 @@
     width:100%; padding:13px; border:0; border-radius:10px; background:var(--amber);
     color:#1b1300; font-weight:800; font-size:1rem
   }
-  .primary:focus-visible,.ghost:focus-visible,#ptt:focus-visible,#chatSend:focus-visible{outline:3px solid var(--text); outline-offset:3px}
+  .primary:focus-visible,.ghost:focus-visible,#ptt:focus-visible,#vbtn:focus-visible,#chatSend:focus-visible{outline:3px solid var(--text); outline-offset:3px}
   .ghost{
     padding:9px 14px; border-radius:8px; border:1px solid var(--line); background:transparent; color:var(--text); font-size:.9rem
   }
@@ -82,22 +84,30 @@
   #hint{font-size:.85rem; color:var(--muted); margin:10px 0 0}
 
   /* PTT */
-  .ptt-wrap{display:flex; justify-content:center; padding:8px 0 4px}
+  /* ردیف دکمه‌ها: چپ = صدا (کوچک، پایین)، راست = تصویر (بزرگ) */
+  .btn-row{
+    --vsize:min(210px, calc((100vw - 52px) * .6));
+    --asize:min(140px, calc((100vw - 52px) * .4));
+    display:flex; direction:ltr; align-items:flex-end; justify-content:space-between;
+    gap:12px; padding:8px 4px 14px;
+  }
+  .btn-row button{direction:rtl}
   #ptt{
-    position:relative; width:210px; height:210px; border-radius:50%; border:0; color:#1b1300;
+    position:relative; width:var(--asize); height:var(--asize); flex:none; border-radius:50%; border:0; padding:0; color:#1b1300;
     background:
       repeating-conic-gradient(from 0deg, rgba(0,0,0,.18) 0 4deg, rgba(0,0,0,0) 4deg 8deg),
       radial-gradient(circle at 50% 40%, #ffc933, var(--amber) 60%, #a86f00);
     box-shadow:0 8px 0 #7a5200, 0 14px 24px rgba(0,0,0,.35), 0 0 0 calc(var(--level) * 26px) color-mix(in srgb,var(--live) 35%,transparent);
-    font-weight:800; font-size:1.2rem; touch-action:none; user-select:none; -webkit-user-select:none; -webkit-touch-callout:none;
+    font-weight:800; font-size:.95rem; touch-action:none; user-select:none; -webkit-user-select:none; -webkit-touch-callout:none;
     transition:transform .06s, box-shadow .06s, background-color .1s;
   }
   #ptt .inner{
-    position:absolute; inset:26px; border-radius:50%;
+    position:absolute; inset:12.4%; border-radius:50%;
     background:var(--lcd); color:var(--amber); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;
     box-shadow:inset 0 2px 8px rgba(0,0,0,.6);
   }
-  #ptt .inner small{font-weight:400; font-size:.75rem; opacity:.8}
+  #ptt .inner small{font-weight:400; font-size:.66rem; opacity:.8; line-height:1.4}
+  #ptt .inner svg,#vbtn .inner svg{width:26%; height:auto; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round}
   #ptt.on{
     transform:translateY(6px);
     background:
@@ -106,7 +116,44 @@
     box-shadow:0 2px 0 #14522a, 0 6px 14px rgba(0,0,0,.35), 0 0 0 calc(6px + var(--level) * 30px) color-mix(in srgb,var(--live) 38%,transparent);
   }
   #ptt.on .inner{color:var(--live)}
-  @media (prefers-reduced-motion: reduce){ #ptt{transition:none} }
+  @media (prefers-reduced-motion: reduce){ #ptt,#vbtn{transition:none} }
+
+  /* Video button (blue) */
+  #vbtn{
+    position:relative; width:var(--vsize); height:var(--vsize); flex:none; border-radius:50%; border:0; padding:0; color:#04121f;
+    background:
+      repeating-conic-gradient(from 0deg, rgba(0,0,0,.18) 0 4deg, rgba(0,0,0,0) 4deg 8deg),
+      radial-gradient(circle at 50% 40%, var(--cam-hi), var(--cam) 60%, var(--cam-lo));
+    box-shadow:0 8px 0 var(--cam-edge), 0 14px 24px rgba(0,0,0,.35);
+    font-weight:800; font-size:1.05rem; touch-action:none; user-select:none; -webkit-user-select:none; -webkit-touch-callout:none;
+    transition:transform .06s, box-shadow .06s;
+  }
+  #vbtn .inner{
+    position:absolute; inset:12.4%; border-radius:50%; overflow:hidden;
+    background:var(--lcd); color:var(--cam); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;
+    box-shadow:inset 0 2px 8px rgba(0,0,0,.6); transition:inset .12s;
+  }
+  #vbtn .idle{display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; text-align:center}
+  #vbtn .idle small{font-weight:400; font-size:.68rem; opacity:.85; line-height:1.4}
+  #vvid{
+    position:absolute; inset:0; width:100%; height:100%; object-fit:cover; background:#000;
+    display:none; pointer-events:none;
+  }
+  #vvid.mirror{transform:scaleX(-1)}
+  #vtag{
+    display:none; position:absolute; left:50%; bottom:9%; transform:translateX(-50%);
+    max-width:80%; padding:0 10px; border-radius:999px; background:rgba(0,0,0,.62); color:#fff;
+    font-size:.72rem; font-weight:600; line-height:1.7; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; pointer-events:none;
+  }
+  #vbtn.live .inner{inset:5%}
+  #vbtn.live .idle{display:none}
+  #vbtn.live #vvid,#vbtn.live #vtag{display:block}
+  #vbtn.live{box-shadow:0 8px 0 var(--cam-edge), 0 14px 24px rgba(0,0,0,.35), 0 0 0 8px color-mix(in srgb,var(--cam) 38%,transparent)}
+  #vbtn.on{
+    transform:translateY(6px);
+    box-shadow:0 2px 0 var(--cam-edge), 0 6px 14px rgba(0,0,0,.35), 0 0 0 8px color-mix(in srgb,var(--cam) 38%,transparent);
+  }
+  .chip.vid{border-color:var(--cam); color:var(--cam)}
 
   .controls{display:flex; flex-direction:column; gap:12px}
   .line{display:flex; align-items:center; justify-content:space-between; gap:12px; font-size:.92rem}
@@ -174,7 +221,7 @@
     </div>
     <button class="primary" id="joinBtn">ورود به کانال</button>
     <p class="err" id="err" role="alert"></p>
-    <p class="note">برای اجرا به مجوز میکروفون نیاز است. صدا مستقیم بین دستگاه‌ها (WebRTC) ارسال می‌شود.</p>
+    <p class="note">برای اجرا به مجوز میکروفون نیاز است (برای پیام تصویری، اولین بار مجوز دوربین هم پرسیده می‌شود). صدا و تصویر مستقیم بین دستگاه‌ها (WebRTC) ارسال می‌شود.</p>
   </section>
 
   <!-- صفحه اصلی -->
@@ -191,13 +238,27 @@
 
     <!-- تنظیمات (بالای دکمه) -->
     <div class="card controls">
-      <label class="switch"><input type="checkbox" id="latch"> حالت قفل (یک بار بزن شروع، یک بار بزن پایان)</label>
+      <label class="switch"><input type="checkbox" id="latch"> حالت قفل صدا (یک بار بزن شروع، یک بار بزن پایان)</label>
       <div class="line"><span>بلندی صدا</span><input type="range" id="vol" min="0" max="1" step="0.05" value="1" aria-label="بلندی صدا"></div>
     </div>
 
-    <div class="ptt-wrap">
+    <div class="btn-row">
       <button id="ptt" aria-label="دکمه صحبت" aria-pressed="false">
-        <span class="inner"><span id="pttLabel">نگه دارید</span><small>یا کلید Space</small></span>
+        <span class="inner">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
+          <span id="pttLabel">نگه دارید</span><small>یا کلید Space</small>
+        </span>
+      </button>
+      <button id="vbtn" aria-label="دکمه پیام تصویری" aria-pressed="false">
+        <span class="inner">
+          <span class="idle">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="13" height="12" rx="2.5"/><path d="M16 10.5l5-3v9l-5-3z"/></svg>
+            <span id="vLabel">تصویر</span>
+            <small>نگه دارید · کلید V</small>
+          </span>
+          <video id="vvid" muted playsinline autoplay></video>
+          <span id="vtag"></span>
+        </span>
       </button>
     </div>
 
@@ -241,6 +302,8 @@
   let vol = 1;
   let actx = null, analyser = null, meterBuf = null, raf = 0, wakeLock = null;
   const dirMembers = new Map();
+  let vidStream = null, vidActive = false, vidToken = 0;
+  const vidCalls = new Map(); // peerId -> outgoing video MediaConnection
 
   // ---------- helpers ----------
   function toast(msg){
@@ -272,7 +335,7 @@
   }
   function getRec(id){
     let r = peers.get(id);
-    if (!r) { r = { id, name: '', data: null, out: null, inc: null, audio: null, talking: false }; peers.set(id, r); }
+    if (!r) { r = { id, name: '', data: null, out: null, inc: null, audio: null, talking: false, vinc: null, vstream: null, vidOn: false }; peers.set(id, r); }
     return r;
   }
 
@@ -311,22 +374,28 @@
   // ---------- UI ----------
   function render(){
     const list = $('members'); list.innerHTML = '';
-    const add = (name, talk, self) => {
+    const add = (name, talk, self, vid) => {
       const li = document.createElement('li');
-      li.className = 'chip' + (talk ? ' talk' : '') + (self ? ' self' : '');
+      li.className = 'chip' + (talk ? ' talk' : '') + (self ? ' self' : '') + (vid ? ' vid' : '');
       const d = document.createElement('span'); d.className = 'dot';
       const t = document.createElement('span'); t.textContent = name + (self ? ' (شما)' : '');
       li.append(d, t); list.append(li);
     };
-    add(myName, talking, true);
-    peers.forEach(r => { if (r.data) add(r.name || 'ناشناس', r.talking, false); });
+    add(myName, talking, true, vidActive);
+    peers.forEach(r => { if (r.data) add(r.name || 'ناشناس', r.talking, false, r.vidOn); });
     const n = [...peers.values()].filter(r => r.data).length;
     $('count').textContent = n + 1;
     $('hint').hidden = n > 0;
     const speaker = [...peers.values()].find(r => r.talking);
     const lcd = $('lcd');
-    if (talking) { $('now').textContent = '🎙 شما در حال صحبت هستید'; lcd.classList.add('live'); }
+    const vs = [...peers.values()].find(r => r.vidOn);
+    if (talking || vidActive) {
+      $('now').textContent = talking && vidActive ? '🎙📹 صدا و تصویر شما در حال ارسال است'
+        : (talking ? '🎙 شما در حال صحبت هستید' : '📹 تصویر شما در حال ارسال است');
+      lcd.classList.add('live');
+    }
     else if (speaker) { $('now').textContent = '🔊 ' + (speaker.name || 'ناشناس') + ' صحبت می‌کند'; lcd.classList.add('live'); }
+    else if (vs) { $('now').textContent = '📹 ' + (vs.name || 'ناشناس') + ' تصویر می‌فرستد'; lcd.classList.add('live'); }
     else { $('now').textContent = 'آماده'; lcd.classList.remove('live'); }
   }
 
@@ -337,6 +406,7 @@
     const onOpen = () => {
       try { conn.send({ t: 'hi', name: myName, talking }); } catch (e) {}
       ensureCall(rec);
+      if (vidActive) sendVideoTo(rec);
       render();
     };
     if (conn.open) onOpen(); else conn.on('open', onOpen);
@@ -351,6 +421,15 @@
       if (!text.trim()) return;
       const name = String(m.n || rec.name || 'ناشناس').slice(0, 20);
       addChat(name, text, false);
+      return;
+    }
+    if (m.t === 'vid') {
+      rec.vidOn = !!m.v;
+      if (!rec.vidOn) {
+        try { rec.vinc && rec.vinc.close(); } catch (e) {}
+        rec.vinc = null; rec.vstream = null;
+      }
+      refreshVideoView(); render();
       return;
     }
     if (m.t === 'hi') {
@@ -374,6 +453,7 @@
     } catch (e) {}
   }
   function bindIncomingCall(call){
+    if (call.metadata && call.metadata.kind === 'video') { bindIncomingVideo(call); return; }
     const rec = getRec(call.peer);
     rec.inc = call;
     call.answer(); // receive only
@@ -396,8 +476,12 @@
     if (!rec || (conn && rec.data !== conn)) return;
     try { rec.out && rec.out.close(); } catch (e) {}
     try { rec.inc && rec.inc.close(); } catch (e) {}
+    try { rec.vinc && rec.vinc.close(); } catch (e) {}
+    const vc = vidCalls.get(id);
+    if (vc) { try { vc.close(); } catch (e) {} vidCalls.delete(id); }
     if (rec.audio) { rec.audio.srcObject = null; rec.audio.remove(); }
     peers.delete(id);
+    refreshVideoView();
     render();
   }
   function connectPeer(id){
@@ -515,6 +599,105 @@
     meterLoop();
   }
 
+  // ---------- video message (hold to send the camera) ----------
+  const vbtn = $('vbtn'), vvid = $('vvid');
+  let vKey = false;
+
+  // نمایش تصویر روی دکمه: اول تصویر خودم، وگرنه تصویر کسی که در حال ارسال است
+  function refreshVideoView(){
+    let s = null, label = '', mirror = false;
+    if (vidActive && vidStream) { s = vidStream; label = 'شما'; mirror = true; }
+    else {
+      for (const r of peers.values()) {
+        if (r.vidOn && r.vstream) { s = r.vstream; label = r.name || 'ناشناس'; break; }
+      }
+    }
+    if (s) {
+      if (vvid.srcObject !== s) {
+        vvid.srcObject = s;
+        const p = vvid.play(); if (p && p.catch) p.catch(() => {});
+      }
+      vvid.classList.toggle('mirror', mirror);
+      $('vtag').textContent = label;
+      vbtn.classList.add('live');
+    } else {
+      if (vvid.srcObject) vvid.srcObject = null;
+      vbtn.classList.remove('live');
+    }
+  }
+  function bindIncomingVideo(call){
+    const rec = getRec(call.peer);
+    try { rec.vinc && rec.vinc.close(); } catch (e) {}
+    rec.vstream = null;
+    rec.vinc = call;
+    call.answer(); // receive only
+    call.on('stream', s => { if (rec.vinc !== call) return; rec.vstream = s; refreshVideoView(); });
+    call.on('close', () => {
+      if (rec.vinc === call) { rec.vinc = null; rec.vstream = null; refreshVideoView(); }
+    });
+  }
+  function callVideo(rec){
+    if (!me || !vidStream || vidCalls.has(rec.id)) return;
+    try {
+      const c = me.call(rec.id, vidStream, { metadata: { kind: 'video' } });
+      vidCalls.set(rec.id, c);
+      const clean = () => { if (vidCalls.get(rec.id) === c) vidCalls.delete(rec.id); };
+      c.on('close', clean); c.on('error', clean);
+    } catch (e) {}
+  }
+  function sendVideoTo(rec){
+    try { rec.data && rec.data.open && rec.data.send({ t: 'vid', v: true }); } catch (e) {}
+    callVideo(rec);
+  }
+  async function startVideo(){
+    if (vidActive) return;
+    const my = ++vidToken;
+    let s;
+    try {
+      s = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'user', width: { ideal: 480 }, height: { ideal: 480 }, frameRate: { ideal: 24, max: 30 } },
+        audio: false
+      });
+    } catch (e) {
+      if (my === vidToken) toast('دسترسی به دوربین داده نشد. مجوز دوربین را فعال کنید.');
+      return;
+    }
+    // اگر قبل از آماده شدن دوربین دکمه رها شده، همین‌جا قطع کن
+    if (my !== vidToken || vidActive) { s.getTracks().forEach(t => t.stop()); return; }
+    vidStream = s; vidActive = true;
+    const vt = s.getVideoTracks()[0];
+    if (vt) vt.addEventListener('ended', () => { if (vidStream === s) stopVideo(); });
+    vbtn.classList.add('on'); vbtn.setAttribute('aria-pressed', 'true');
+    broadcast({ t: 'vid', v: true });
+    peers.forEach(rec => { if (rec.data && rec.data.open) callVideo(rec); });
+    refreshVideoView(); render();
+  }
+  function stopVideo(){
+    vidToken++;
+    if (!vidActive) return;
+    vidActive = false;
+    broadcast({ t: 'vid', v: false });
+    vidCalls.forEach(c => { try { c.close(); } catch (e) {} });
+    vidCalls.clear();
+    if (vidStream) { vidStream.getTracks().forEach(t => t.stop()); vidStream = null; }
+    vbtn.classList.remove('on'); vbtn.setAttribute('aria-pressed', 'false');
+    refreshVideoView(); render();
+  }
+  vbtn.addEventListener('pointerdown', e => {
+    e.preventDefault();
+    try { vbtn.setPointerCapture(e.pointerId); } catch (x) {}
+    startVideo();
+  });
+  ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(ev => vbtn.addEventListener(ev, () => stopVideo()));
+  vbtn.addEventListener('contextmenu', e => e.preventDefault());
+  document.addEventListener('keydown', e => {
+    if (e.code !== 'KeyV' || e.repeat || !stream || e.ctrlKey || e.metaKey || e.altKey) return;
+    const ae = document.activeElement;
+    if (ae && ae.tagName === 'INPUT' && ae.type === 'text') return;
+    e.preventDefault(); vKey = true; startVideo();
+  });
+  document.addEventListener('keyup', e => { if (e.code === 'KeyV' && vKey) { vKey = false; stopVideo(); } });
+
   // ---------- push to talk ----------
   function setTalk(v){
     if (!stream || v === talking) return;
@@ -553,8 +736,9 @@
   ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(ev =>
     ptt.addEventListener(ev, () => { if (!$('latch').checked) setTalk(false); }));
   ptt.addEventListener('contextmenu', e => e.preventDefault());
-  window.addEventListener('blur', () => { if (!$('latch').checked) setTalk(false); });
+  window.addEventListener('blur', () => { if (!$('latch').checked) setTalk(false); stopVideo(); });
   document.addEventListener('visibilitychange', async () => {
+    if (document.visibilityState === 'hidden') stopVideo();
     if (document.visibilityState === 'visible' && !leaving && 'wakeLock' in navigator && stream) {
       try { wakeLock = await navigator.wakeLock.request('screen'); } catch (e) {}
     }
@@ -587,7 +771,7 @@
   });
   $('leaveBtn').addEventListener('click', () => {
     leaving = true;
-    try { setTalk(false); } catch (e) {}
+    try { setTalk(false); stopVideo(); } catch (e) {}
     peers.forEach(r => { try { r.data && r.data.close(); r.out && r.out.close(); r.inc && r.inc.close(); } catch (e) {} });
     try { dirConn && dirConn.close(); } catch (e) {}
     try { dirPeer && dirPeer.destroy(); } catch (e) {}
