@@ -1,1 +1,403 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>واکی تاکی آنلاین</title>
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    margin: 0;
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    background: linear-gradient(135deg, #1e1e2e 0%, #2d1b3d 100%);
+    color: #fff;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    overflow: hidden;
+  }
+  .container {
+    width: 100%;
+    max-width: 420px;
+    background: rgba(255,255,255,0.05);
+    backdrop-filter: blur(10px);
+    border-radius: 24px;
+    padding: 28px 24px;
+    border: 1px solid rgba(255,255,255,0.1);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  }
+  h1 {
+    text-align: center;
+    font-size: 22px;
+    margin: 0 0 20px;
+    background: linear-gradient(90deg, #7f5af0, #2cb67d);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .status {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 13px;
+    padding: 10px;
+    background: rgba(0,0,0,0.3);
+    border-radius: 12px;
+    margin-bottom: 20px;
+  }
+  .dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: #ff5555;
+    box-shadow: 0 0 10px #ff5555;
+  }
+  .dot.online { background: #2cb67d; box-shadow: 0 0 10px #2cb67d; }
+  .users {
+    font-size: 12px;
+    color: #aaa;
+    text-align: center;
+    margin-bottom: 24px;
+    min-height: 18px;
+  }
+  .ptt-btn {
+    width: 200px;
+    height: 200px;
+    border-radius: 50%;
+    border: none;
+    margin: 0 auto;
+    display: block;
+    background: radial-gradient(circle at 30% 30%, #7f5af0, #4a2f8a);
+    color: #fff;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    box-shadow: 0 10px 40px rgba(127,90,240,0.5), inset 0 -6px 20px rgba(0,0,0,0.3);
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: none;
+  }
+  .ptt-btn:active, .ptt-btn.active {
+    transform: scale(0.95);
+    background: radial-gradient(circle at 30% 30%, #ff4d6d, #a01837);
+    box-shadow: 0 5px 30px rgba(255,77,109,0.7), inset 0 4px 20px rgba(0,0,0,0.4);
+  }
+  .ptt-btn:disabled {
+    background: #333;
+    box-shadow: none;
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+  .hint {
+    text-align: center;
+    font-size: 12px;
+    color: #888;
+    margin-top: 20px;
+    line-height: 1.6;
+  }
+  .speaking {
+    text-align: center;
+    font-size: 13px;
+    margin-top: 14px;
+    min-height: 20px;
+    color: #2cb67d;
+    font-weight: bold;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>🎙️ واکی تاکی آنلاین</h1>
+  
+  <div class="status">
+    <div class="dot" id="dot"></div>
+    <span id="statusText">در حال اتصال...</span>
+  </div>
+  
+  <div class="users" id="usersList">کاربران آنلاین: 0</div>
+  
+  <button class="ptt-btn" id="pttBtn" disabled>برای صحبت<br>نگه دار</button>
+  
+  <div class="speaking" id="speaking"></div>
+  
+  <div class="hint">
+    دکمه رو نگه دار تا بقیه صدات رو بشنون<br>
+    (نیاز به اجازه میکروفون)
+  </div>
+</div>
 
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
+import { 
+  getDatabase, ref, set, onValue, onDisconnect, 
+  push, remove, serverTimestamp, off
+} from "https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js";
+
+// ========== 🔥 اینجا کانفیگ خودت رو بذار ==========
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  databaseURL: "https://YOUR_PROJECT-default-rtdb.firebaseio.com",
+  projectId: "YOUR_PROJECT",
+  storageBucket: "YOUR_PROJECT.appspot.com",
+  messagingSenderId: "0000000000",
+  appId: "1:0000000000:web:xxxxxxxx"
+};
+// ==================================================
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+const ROOM = "walkietalkie-room-1"; // نام اتاق
+
+// شناسه یکتا برای کاربر
+const myId = "u_" + Math.random().toString(36).substring(2, 10);
+
+let localStream = null;
+let peers = {}; // { userId: RTCPeerConnection }
+let isTalking = false;
+let myPresenceRef = null;
+
+const dot = document.getElementById("dot");
+const statusText = document.getElementById("statusText");
+const usersList = document.getElementById("usersList");
+const pttBtn = document.getElementById("pttBtn");
+const speaking = document.getElementById("speaking");
+
+// ========== راه‌اندازی میکروفون ==========
+async function initMic() {
+  try {
+    localStream = await navigator.mediaDevices.getUserMedia({
+      audio: {
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true
+      }
+    });
+    // میکروفون رو قطع کن تا دکمه فشرده بشه
+    localStream.getAudioTracks().forEach(t => t.enabled = false);
+    return true;
+  } catch (e) {
+    alert("دسترسی به میکروفون رد شد یا مرورگر پشتیبانی نمی‌کنه.\n" + e.message);
+    return false;
+  }
+}
+
+// ========== مدیریت Presence (کاربران آنلاین) ==========
+function setupPresence() {
+  const presenceRef = ref(db, `rooms/${ROOM}/users/${myId}`);
+  myPresenceRef = presenceRef;
+  
+  set(presenceRef, { joinedAt: serverTimestamp() });
+  onDisconnect(presenceRef).remove();
+  
+  const allUsersRef = ref(db, `rooms/${ROOM}/users`);
+  onValue(allUsersRef, (snap) => {
+    const users = snap.val() || {};
+    const ids = Object.keys(users);
+    usersList.textContent = `کاربران آنلاین: ${ids.length}`;
+    
+    // برای هر کاربر جدید، اتصال WebRTC بساز
+    ids.forEach(uid => {
+      if (uid !== myId && !peers[uid]) {
+        createPeer(uid, false);
+      }
+    });
+    
+    // کاربرانی که رفتن رو پاک کن
+    Object.keys(peers).forEach(uid => {
+      if (!ids.includes(uid)) {
+        peers[uid].close();
+        delete peers[uid];
+      }
+    });
+  });
+}
+
+// ========== WebRTC ==========
+const rtcConfig = {
+  iceServers: [
+    { urls: "stun:stun.l.google.com:19302" },
+    { urls: "stun:stun1.l.google.com:19302" },
+    { urls: "stun:global.stun.twilio.com:3478" }
+  ]
+};
+
+function createPeer(peerId, isInitiator) {
+  if (peers[peerId]) return peers[peerId];
+  
+  const pc = new RTCPeerConnection(rtcConfig);
+  peers[peerId] = pc;
+  
+  // اضافه کردن ترک‌های صوتی
+  if (localStream) {
+    localStream.getTracks().forEach(track => {
+      pc.addTrack(track, localStream);
+    });
+  }
+  
+  // دریافت صدا از طرف مقابل
+  pc.ontrack = (event) => {
+    const remoteStream = event.streams[0];
+    let audioEl = document.getElementById("audio_" + peerId);
+    if (!audioEl) {
+      audioEl = document.createElement("audio");
+      audioEl.id = "audio_" + peerId;
+      audioEl.autoplay = true;
+      document.body.appendChild(audioEl);
+    }
+    audioEl.srcObject = remoteStream;
+  };
+  
+  // ICE candidates
+  pc.onicecandidate = (event) => {
+    if (event.candidate) {
+      push(ref(db, `rooms/${ROOM}/signals/${peerId}/${myId}/candidates`), event.candidate.toJSON());
+    }
+  };
+  
+  pc.onconnectionstatechange = () => {
+    if (pc.connectionState === "failed" || pc.connectionState === "disconnected") {
+      pc.close();
+      delete peers[peerId];
+    }
+  };
+  
+  // ارسال offer اگر initiator هستیم
+  if (isInitiator) {
+    pc.onnegotiationneeded = async () => {
+      try {
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+        await set(ref(db, `rooms/${ROOM}/signals/${peerId}/${myId}/offer`), {
+          type: offer.type,
+          sdp: offer.sdp
+        });
+      } catch (e) { console.error(e); }
+    };
+  } else {
+    // منتظر offer از طرف مقابل
+    const offerRef = ref(db, `rooms/${ROOM}/signals/${myId}/${peerId}/offer`);
+    onValue(offerRef, async (snap) => {
+      const offer = snap.val();
+      if (offer && !pc.currentRemoteDescription) {
+        await pc.setRemoteDescription(new RTCSessionDescription(offer));
+        const answer = await pc.createAnswer();
+        await pc.setLocalDescription(answer);
+        await set(ref(db, `rooms/${ROOM}/signals/${peerId}/${myId}/answer`), {
+          type: answer.type,
+          sdp: answer.sdp
+        });
+      }
+    });
+  }
+  
+  // دریافت answer
+  const answerRef = ref(db, `rooms/${ROOM}/signals/${myId}/${peerId}/answer`);
+  onValue(answerRef, async (snap) => {
+    const answer = snap.val();
+    if (answer && !pc.currentRemoteDescription) {
+      await pc.setRemoteDescription(new RTCSessionDescription(answer));
+    }
+  });
+  
+  // دریافت ICE candidates طرف مقابل
+  const candRef = ref(db, `rooms/${ROOM}/signals/${myId}/${peerId}/candidates`);
+  onValue(candRef, (snap) => {
+    const cands = snap.val() || {};
+    Object.values(cands).forEach(async (c) => {
+      try { await pc.addIceCandidate(new RTCIceCandidate(c)); } catch(e){}
+    });
+  });
+  
+  return pc;
+}
+
+// ========== Push to Talk ==========
+async function startTalking() {
+  if (isTalking) return;
+  isTalking = true;
+  pttBtn.classList.add("active");
+  
+  if (localStream) {
+    localStream.getAudioTracks().forEach(t => t.enabled = true);
+  }
+  
+  // علامت‌گذاری در دیتابیس
+  await set(ref(db, `rooms/${ROOM}/speaking/${myId}`), true);
+  onDisconnect(ref(db, `rooms/${ROOM}/speaking/${myId}`)).remove();
+}
+
+async function stopTalking() {
+  if (!isTalking) return;
+  isTalking = false;
+  pttBtn.classList.remove("active");
+  
+  if (localStream) {
+    localStream.getAudioTracks().forEach(t => t.enabled = false);
+  }
+  
+  await remove(ref(db, `rooms/${ROOM}/speaking/${myId}`));
+}
+
+pttBtn.addEventListener("pointerdown", (e) => {
+  e.preventDefault();
+  startTalking();
+});
+pttBtn.addEventListener("pointerup", stopTalking);
+pttBtn.addEventListener("pointerleave", stopTalking);
+pttBtn.addEventListener("pointercancel", stopTalking);
+
+// ========== نمایش اینکه کی داره حرف میزنه ==========
+onValue(ref(db, `rooms/${ROOM}/speaking`), (snap) => {
+  const speakers = snap.val() || {};
+  const ids = Object.keys(speakers);
+  if (ids.length > 0 && !ids.includes(myId)) {
+    speaking.textContent = "🔊 یکی داره صحبت می‌کنه...";
+  } else if (ids.includes(myId)) {
+    speaking.textContent = "🎤 شما در حال صحبت...";
+  } else {
+    speaking.textContent = "";
+  }
+});
+
+// ========== شروع ==========
+async function main() {
+  statusText.textContent = "در حال دریافت میکروفون...";
+  const ok = await initMic();
+  if (!ok) {
+    statusText.textContent = "خطا در میکروفون";
+    return;
+  }
+  
+  dot.classList.add("online");
+  statusText.textContent = "آنلاین";
+  pttBtn.disabled = false;
+  
+  setupPresence();
+  
+  // ساخت اتصال با کاربران موجود (اینیتیتور بشیم برای ID های بزرگتر)
+  onValue(ref(db, `rooms/${ROOM}/users`), (snap) => {
+    const users = snap.val() || {};
+    Object.keys(users).forEach(uid => {
+      if (uid !== myId && !peers[uid]) {
+        // کاربری که ID بزرگتر داره initiator میشه
+        const isInitiator = myId > uid;
+        createPeer(uid, isInitiator);
+      }
+    });
+  });
+}
+
+// تمیزکاری هنگام بستن
+window.addEventListener("beforeunload", () => {
+  if (myPresenceRef) remove(myPresenceRef);
+  Object.values(peers).forEach(pc => pc.close());
+});
+
+main();
+</script>
+</body>
+</html>
