@@ -14,7 +14,10 @@
     --text:#ece7d8; --muted:#a29f8d;
     --amber:#f2a900; --amber-dim:#6b4d00; --lcd:#14160f;
     --live:#6fe08a; --danger:#ff5a4d;
-    --cam:#4aa3ff; --cam-hi:#a9d6ff; --cam-lo:#1d5fb0; --cam-edge:#123f73;
+    /* دکمه صدا: قرمز */
+    --red:#ee4b52; --red-hi:#ff9a9e; --red-lo:#a8222c; --red-edge:#6b121a;
+    /* دکمه تصویر: آبی فیروزه‌ای */
+    --cam:#1fcfc4; --cam-hi:#a6f5ef; --cam-lo:#0e8f8a; --cam-edge:#0a5a56;
     --level:0;
     color-scheme:dark;
   }
@@ -24,7 +27,8 @@
       --text:#23261d; --muted:#6a6755;
       --amber:#b87800; --amber-dim:#d8c48a; --lcd:#1f2218;
       --live:#1f9d45; --danger:#d1382b;
-      --cam:#1f78e0; --cam-hi:#8cc2ff; --cam-lo:#17559f; --cam-edge:#0f3a70;
+      --red:#e0373f; --red-hi:#ff8f94; --red-lo:#9c1b25; --red-edge:#640f17;
+      --cam:#10b5aa; --cam-hi:#8defe8; --cam-lo:#0b7f7a; --cam-edge:#075652;
       color-scheme:light;
     }
   }
@@ -83,46 +87,44 @@
   .chip.talk .dot{background:var(--live); box-shadow:0 0 0 4px color-mix(in srgb,var(--live) 30%,transparent)}
   #hint{font-size:.85rem; color:var(--muted); margin:10px 0 0}
 
-  /* PTT */
-  /* ردیف دکمه‌ها: چپ = صدا (کوچک، پایین)، راست = تصویر (بزرگ) */
+  /* ردیف دکمه‌ها: چپ = صدا (کوچک‌تر، قرمز)، راست = تصویر (بزرگ‌تر، فیروزه‌ای) */
   .btn-row{
-    --vsize:min(210px, calc((100vw - 52px) * .6));
-    --asize:min(140px, calc((100vw - 52px) * .4));
+    --vsize:min(236px, calc((100vw - 52px) * .66));
+    --asize:min(118px, calc((100vw - 52px) * .34));
     display:flex; direction:ltr; align-items:flex-end; justify-content:space-between;
     gap:12px; padding:8px 4px 14px;
   }
   .btn-row button{direction:rtl}
+
+  /* PTT (red) */
   #ptt{
-    position:relative; width:var(--asize); height:var(--asize); flex:none; border-radius:50%; border:0; padding:0; color:#1b1300;
+    position:relative; width:var(--asize); height:var(--asize); flex:none; border-radius:50%; border:0; padding:0; color:#2a0508;
     background:
-      repeating-conic-gradient(from 0deg, rgba(0,0,0,.18) 0 4deg, rgba(0,0,0,0) 4deg 8deg),
-      radial-gradient(circle at 50% 40%, #ffc933, var(--amber) 60%, #a86f00);
-    box-shadow:0 8px 0 #7a5200, 0 14px 24px rgba(0,0,0,.35), 0 0 0 calc(var(--level) * 26px) color-mix(in srgb,var(--live) 35%,transparent);
-    font-weight:800; font-size:.95rem; touch-action:none; user-select:none; -webkit-user-select:none; -webkit-touch-callout:none;
-    transition:transform .06s, box-shadow .06s, background-color .1s;
+      repeating-conic-gradient(from 0deg, rgba(0,0,0,.16) 0 4deg, rgba(0,0,0,0) 4deg 8deg),
+      radial-gradient(circle at 50% 40%, var(--red-hi), var(--red) 60%, var(--red-lo));
+    box-shadow:0 8px 0 var(--red-edge), 0 14px 24px rgba(0,0,0,.35), 0 0 0 calc(var(--level) * 26px) color-mix(in srgb,var(--red) 35%,transparent);
+    font-weight:800; font-size:.9rem; touch-action:none; user-select:none; -webkit-user-select:none; -webkit-touch-callout:none;
+    transition:transform .06s, box-shadow .06s;
   }
   #ptt .inner{
     position:absolute; inset:12.4%; border-radius:50%;
-    background:var(--lcd); color:var(--amber); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;
-    box-shadow:inset 0 2px 8px rgba(0,0,0,.6);
+    background:var(--lcd); color:var(--red); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;
+    box-shadow:inset 0 2px 8px rgba(0,0,0,.6); text-align:center;
   }
-  #ptt .inner small{font-weight:400; font-size:.66rem; opacity:.8; line-height:1.4}
+  #ptt .inner small{font-weight:400; font-size:.6rem; opacity:.85; line-height:1.4}
   #ptt .inner svg,#vbtn .inner svg{width:26%; height:auto; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round}
   #ptt.on{
     transform:translateY(6px);
-    background:
-      repeating-conic-gradient(from 0deg, rgba(0,0,0,.18) 0 4deg, rgba(0,0,0,0) 4deg 8deg),
-      radial-gradient(circle at 50% 40%, #9af0ad, var(--live) 60%, #1f7a3a);
-    box-shadow:0 2px 0 #14522a, 0 6px 14px rgba(0,0,0,.35), 0 0 0 calc(6px + var(--level) * 30px) color-mix(in srgb,var(--live) 38%,transparent);
+    box-shadow:0 2px 0 var(--red-edge), 0 6px 14px rgba(0,0,0,.35), 0 0 0 calc(6px + var(--level) * 30px) color-mix(in srgb,var(--red) 42%,transparent);
   }
-  #ptt.on .inner{color:var(--live)}
+  #ptt.on .inner{color:var(--red-hi)}
   @media (prefers-reduced-motion: reduce){ #ptt,#vbtn{transition:none} }
 
-  /* Video button (blue) */
+  /* Video button (turquoise) */
   #vbtn{
-    position:relative; width:var(--vsize); height:var(--vsize); flex:none; border-radius:50%; border:0; padding:0; color:#04121f;
+    position:relative; width:var(--vsize); height:var(--vsize); flex:none; border-radius:50%; border:0; padding:0; color:#031a19;
     background:
-      repeating-conic-gradient(from 0deg, rgba(0,0,0,.18) 0 4deg, rgba(0,0,0,0) 4deg 8deg),
+      repeating-conic-gradient(from 0deg, rgba(0,0,0,.16) 0 4deg, rgba(0,0,0,0) 4deg 8deg),
       radial-gradient(circle at 50% 40%, var(--cam-hi), var(--cam) 60%, var(--cam-lo));
     box-shadow:0 8px 0 var(--cam-edge), 0 14px 24px rgba(0,0,0,.35);
     font-weight:800; font-size:1.05rem; touch-action:none; user-select:none; -webkit-user-select:none; -webkit-touch-callout:none;
@@ -158,8 +160,6 @@
   .controls{display:flex; flex-direction:column; gap:12px}
   .line{display:flex; align-items:center; justify-content:space-between; gap:12px; font-size:.92rem}
   input[type=range]{flex:1; accent-color:var(--amber)}
-  .switch{display:flex; align-items:center; gap:8px; cursor:pointer; font-size:.92rem}
-  .switch input{accent-color:var(--amber); width:18px; height:18px}
   .actions{display:flex; gap:10px}
   .actions .ghost{flex:1}
 
@@ -179,10 +179,10 @@
   .msg{
     max-width:86%; padding:6px 10px 4px; border-radius:12px; background:var(--panel);
     border:1px solid var(--line); overflow-wrap:anywhere; flex:none;
-    align-self:flex-end;                      /* پیام دیگران: سمت چپ */
+    align-self:flex-end;
   }
   .msg.self{
-    align-self:flex-start;                    /* پیام خودم: سمت راست (مثل تلگرام) */
+    align-self:flex-start;
     background:color-mix(in srgb,var(--amber) 22%,var(--panel2));
     border-color:color-mix(in srgb,var(--amber) 45%,var(--line));
   }
@@ -238,7 +238,6 @@
 
     <!-- تنظیمات (بالای دکمه) -->
     <div class="card controls">
-      <label class="switch"><input type="checkbox" id="latch"> حالت قفل صدا (یک بار بزن شروع، یک بار بزن پایان)</label>
       <div class="line"><span>بلندی صدا</span><input type="range" id="vol" min="0" max="1" step="0.05" value="1" aria-label="بلندی صدا"></div>
     </div>
 
@@ -253,8 +252,8 @@
         <span class="inner">
           <span class="idle">
             <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="13" height="12" rx="2.5"/><path d="M16 10.5l5-3v9l-5-3z"/></svg>
-            <span id="vLabel">تصویر</span>
-            <small>نگه دارید · کلید V</small>
+            <span id="vLabel">نگه دارید</span>
+            <small>یا کلید V</small>
           </span>
           <video id="vvid" muted playsinline autoplay></video>
           <span id="vtag"></span>
@@ -303,6 +302,8 @@
   let actx = null, analyser = null, meterBuf = null, raf = 0, wakeLock = null;
   const dirMembers = new Map();
   let vidStream = null, vidActive = false, vidToken = 0;
+  let vidTalk = false;        // آیا میکروفون را خود دکمه تصویر روشن کرده؟
+  let spaceDown = false;
   const vidCalls = new Map(); // peerId -> outgoing video MediaConnection
 
   // ---------- helpers ----------
@@ -599,7 +600,7 @@
     meterLoop();
   }
 
-  // ---------- video message (hold to send the camera) ----------
+  // ---------- video message (hold to send camera + microphone) ----------
   const vbtn = $('vbtn'), vvid = $('vvid');
   let vKey = false;
 
@@ -670,6 +671,8 @@
     vbtn.classList.add('on'); vbtn.setAttribute('aria-pressed', 'true');
     broadcast({ t: 'vid', v: true });
     peers.forEach(rec => { if (rec.data && rec.data.open) callVideo(rec); });
+    // صدا هم همراه تصویر ارسال شود
+    if (!talking) { vidTalk = true; setTalk(true); }
     refreshVideoView(); render();
   }
   function stopVideo(){
@@ -681,6 +684,7 @@
     vidCalls.clear();
     if (vidStream) { vidStream.getTracks().forEach(t => t.stop()); vidStream = null; }
     vbtn.classList.remove('on'); vbtn.setAttribute('aria-pressed', 'false');
+    if (vidTalk) { vidTalk = false; if (!spaceDown && !pttHeld) setTalk(false); }
     refreshVideoView(); render();
   }
   vbtn.addEventListener('pointerdown', e => {
@@ -707,7 +711,7 @@
     const b = $('ptt');
     b.classList.toggle('on', v);
     b.setAttribute('aria-pressed', String(v));
-    $('pttLabel').textContent = v ? 'در حال صحبت' : ($('latch').checked ? 'بزنید' : 'نگه دارید');
+    $('pttLabel').textContent = v ? 'در حال صحبت' : 'نگه دارید';
     beep(v ? 880 : 660, v ? 0.08 : 0.1);
     render();
   }
@@ -727,37 +731,36 @@
     step();
   }
   const ptt = $('ptt');
+  let pttHeld = false;
   ptt.addEventListener('pointerdown', e => {
     e.preventDefault();
-    if ($('latch').checked) { setTalk(!talking); return; }
     try { ptt.setPointerCapture(e.pointerId); } catch (x) {}
+    pttHeld = true;
     setTalk(true);
   });
   ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(ev =>
-    ptt.addEventListener(ev, () => { if (!$('latch').checked) setTalk(false); }));
+    ptt.addEventListener(ev, () => { pttHeld = false; if (!vidActive) setTalk(false); }));
   ptt.addEventListener('contextmenu', e => e.preventDefault());
-  window.addEventListener('blur', () => { if (!$('latch').checked) setTalk(false); stopVideo(); });
+  window.addEventListener('blur', () => { pttHeld = false; spaceDown = false; stopVideo(); setTalk(false); });
   document.addEventListener('visibilitychange', async () => {
     if (document.visibilityState === 'hidden') stopVideo();
     if (document.visibilityState === 'visible' && !leaving && 'wakeLock' in navigator && stream) {
       try { wakeLock = await navigator.wakeLock.request('screen'); } catch (e) {}
     }
   });
-  let spaceDown = false;
   document.addEventListener('keydown', e => {
     if (e.code !== 'Space' || !stream || e.repeat) return;
     // وقتی داخل کادر چت یا هر ورودی متنی هستید، Space فقط فاصله تایپ می‌کند
     if (/^(INPUT|TEXTAREA|BUTTON)$/.test(document.activeElement.tagName) && document.activeElement !== document.body) {
-      if (document.activeElement.type !== 'checkbox' && document.activeElement.id !== 'ptt') return;
+      if (document.activeElement.id !== 'ptt') return;
     }
     e.preventDefault();
-    if ($('latch').checked) { setTalk(!talking); } else { spaceDown = true; setTalk(true); }
+    spaceDown = true; setTalk(true);
   });
   document.addEventListener('keyup', e => {
     if (e.code !== 'Space') return;
-    if (spaceDown && !$('latch').checked) { spaceDown = false; setTalk(false); }
+    if (spaceDown) { spaceDown = false; if (!vidActive) setTalk(false); }
   });
-  $('latch').addEventListener('change', () => { setTalk(false); $('pttLabel').textContent = $('latch').checked ? 'بزنید' : 'نگه دارید'; });
 
   // ---------- misc controls ----------
   $('vol').addEventListener('input', e => {
