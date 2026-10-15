@@ -56,7 +56,7 @@
     width:100%; padding:13px; border:0; border-radius:10px; background:var(--amber);
     color:#1b1300; font-weight:800; font-size:1rem
   }
-  .primary:focus-visible,.ghost:focus-visible,#ptt:focus-visible{outline:3px solid var(--text); outline-offset:3px}
+  .primary:focus-visible,.ghost:focus-visible,#ptt:focus-visible,#chatSend:focus-visible{outline:3px solid var(--text); outline-offset:3px}
   .ghost{
     padding:9px 14px; border-radius:8px; border:1px solid var(--line); background:transparent; color:var(--text); font-size:.9rem
   }
@@ -111,10 +111,45 @@
   .controls{display:flex; flex-direction:column; gap:12px}
   .line{display:flex; align-items:center; justify-content:space-between; gap:12px; font-size:.92rem}
   input[type=range]{flex:1; accent-color:var(--amber)}
-  .switch{display:flex; align-items:center; gap:8px; cursor:pointer}
+  .switch{display:flex; align-items:center; gap:8px; cursor:pointer; font-size:.92rem}
   .switch input{accent-color:var(--amber); width:18px; height:18px}
   .actions{display:flex; gap:10px}
   .actions .ghost{flex:1}
+
+  /* Chat */
+  .chat{display:flex; flex-direction:column; gap:10px; padding:12px}
+  #chatLog{
+    height:250px; overflow-y:scroll; overscroll-behavior:contain;
+    display:flex; flex-direction:column; gap:8px; padding:10px;
+    background:var(--panel2); border:1px solid var(--line); border-radius:10px;
+    scrollbar-width:thin; scrollbar-color:var(--amber) transparent;
+  }
+  #chatLog::-webkit-scrollbar{width:8px}
+  #chatLog::-webkit-scrollbar-track{background:transparent}
+  #chatLog::-webkit-scrollbar-thumb{background:var(--amber-dim); border-radius:8px}
+  #chatLog::-webkit-scrollbar-thumb:hover{background:var(--amber)}
+  #chatEmpty{margin:auto; text-align:center; color:var(--muted); font-size:.85rem; max-width:26ch}
+  .msg{
+    max-width:86%; padding:6px 10px 4px; border-radius:12px; background:var(--panel);
+    border:1px solid var(--line); overflow-wrap:anywhere; flex:none;
+    align-self:flex-end;                      /* پیام دیگران: سمت چپ */
+  }
+  .msg.self{
+    align-self:flex-start;                    /* پیام خودم: سمت راست (مثل تلگرام) */
+    background:color-mix(in srgb,var(--amber) 22%,var(--panel2));
+    border-color:color-mix(in srgb,var(--amber) 45%,var(--line));
+  }
+  .msg .who{font-size:.74rem; font-weight:800; color:var(--amber); line-height:1.5}
+  .msg.self .who{color:var(--live)}
+  .msg .txt{font-size:.95rem; line-height:1.6}
+  .msg time{display:block; font-size:.68rem; color:var(--muted); text-align:end; margin-top:1px}
+  #chatForm{display:flex; gap:8px}
+  #chatInput{flex:1; min-width:0}
+  #chatSend{
+    flex:none; padding:0 18px; border:0; border-radius:8px; background:var(--amber);
+    color:#1b1300; font-weight:800;
+  }
+
   .toast{position:fixed; left:50%; bottom:calc(20px + env(safe-area-inset-bottom,0)); transform:translateX(-50%); background:var(--text); color:var(--bg); padding:8px 16px; border-radius:999px; font-size:.88rem; opacity:0; pointer-events:none; transition:opacity .2s}
   .toast.show{opacity:1}
   [hidden]{display:none !important}
@@ -154,19 +189,32 @@
       <p id="hint">هنوز کسی آنلاین نیست. لینک کانال را برای دوستانتان بفرستید.</p>
     </div>
 
+    <!-- تنظیمات (بالای دکمه) -->
+    <div class="card controls">
+      <label class="switch"><input type="checkbox" id="latch"> حالت قفل (یک بار بزن شروع، یک بار بزن پایان)</label>
+      <div class="line"><span>بلندی صدا</span><input type="range" id="vol" min="0" max="1" step="0.05" value="1" aria-label="بلندی صدا"></div>
+    </div>
+
     <div class="ptt-wrap">
       <button id="ptt" aria-label="دکمه صحبت" aria-pressed="false">
         <span class="inner"><span id="pttLabel">نگه دارید</span><small>یا کلید Space</small></span>
       </button>
     </div>
 
-    <div class="card controls">
-      <label class="switch"><input type="checkbox" id="latch"> حالت قفل (یک بار بزن شروع، یک بار بزن پایان)</label>
-      <div class="line"><span>بلندی صدا</span><input type="range" id="vol" min="0" max="1" step="0.05" value="1" aria-label="بلندی صدا"></div>
-      <div class="actions">
-        <button class="ghost" id="copyBtn">کپی لینک کانال</button>
-        <button class="ghost" id="leaveBtn">خروج</button>
+    <!-- چت گروهی -->
+    <div class="card chat">
+      <div id="chatLog" role="log" aria-live="polite" aria-label="پیام‌های کانال">
+        <div id="chatEmpty">هنوز پیامی نیست. پیام‌ها جایی ذخیره نمی‌شوند و با خروج شما پاک می‌شوند.</div>
       </div>
+      <form id="chatForm" autocomplete="off">
+        <input type="text" id="chatInput" maxlength="500" placeholder="پیام بنویسید…" aria-label="متن پیام" enterkeyhint="send">
+        <button type="submit" id="chatSend">ارسال</button>
+      </form>
+    </div>
+
+    <div class="actions">
+      <button class="ghost" id="copyBtn">کپی لینک کانال</button>
+      <button class="ghost" id="leaveBtn">خروج</button>
     </div>
   </section>
 </main>
@@ -178,6 +226,7 @@
   'use strict';
   const $ = id => document.getElementById(id);
   const PREFIX = 'wt-ptt-v1-';
+  const MAX_MSGS = 500;       // سقف پیام‌های نگهداری‌شده روی صفحه (فقط در حافظه)
 
   // ---------- state ----------
   let me = null;              // our Peer (random id)
@@ -227,6 +276,38 @@
     return r;
   }
 
+  // ---------- chat (فقط در حافظه‌ی همین صفحه؛ هیچ ذخیره‌ای ندارد) ----------
+  const chatLog = $('chatLog');
+  const EMPTY_HTML = '<div id="chatEmpty">هنوز پیامی نیست. پیام‌ها جایی ذخیره نمی‌شوند و با خروج شما پاک می‌شوند.</div>';
+  function fmtTime(d){
+    try { return d.toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit', hour12: false }); }
+    catch (e) { return d.getHours() + ':' + String(d.getMinutes()).padStart(2, '0'); }
+  }
+  function addChat(name, text, self){
+    const empty = $('chatEmpty'); if (empty) empty.remove();
+    const nearBottom = chatLog.scrollHeight - chatLog.scrollTop - chatLog.clientHeight < 60;
+    const box = document.createElement('div');
+    box.className = 'msg' + (self ? ' self' : '');
+    const who = document.createElement('div'); who.className = 'who'; who.textContent = name;
+    const txt = document.createElement('div'); txt.className = 'txt'; txt.dir = 'auto'; txt.textContent = text;
+    const tm = document.createElement('time'); tm.textContent = fmtTime(new Date());
+    box.append(who, txt, tm);
+    chatLog.append(box);
+    while (chatLog.children.length > MAX_MSGS) chatLog.firstElementChild.remove();
+    if (nearBottom || self) chatLog.scrollTop = chatLog.scrollHeight;
+  }
+  function clearChat(){ chatLog.innerHTML = EMPTY_HTML; }
+  $('chatForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const inp = $('chatInput');
+    const text = inp.value.trim().slice(0, 500);
+    if (!text || !me) return;
+    broadcast({ t: 'chat', n: myName, x: text });
+    addChat(myName, text, true);
+    inp.value = '';
+    inp.focus();
+  });
+
   // ---------- UI ----------
   function render(){
     const list = $('members'); list.innerHTML = '';
@@ -265,6 +346,13 @@
   }
   function handleMsg(rec, m){
     if (!m || typeof m !== 'object') return;
+    if (m.t === 'chat') {
+      const text = String(m.x || '').slice(0, 500);
+      if (!text.trim()) return;
+      const name = String(m.n || rec.name || 'ناشناس').slice(0, 20);
+      addChat(name, text, false);
+      return;
+    }
     if (m.t === 'hi') {
       rec.name = String(m.name || '').slice(0, 20);
       rec.talking = !!m.talking;
@@ -395,6 +483,7 @@
     location.hash = encodeURIComponent(roomName);
     $('chName').textContent = 'CH: ' + roomName;
     $('joinCard').hidden = true; $('app').hidden = false;
+    clearChat();   // هر ورود جدید = چت خالی
     setConn('', 'در حال اتصال…');
     render();
 
@@ -473,6 +562,7 @@
   let spaceDown = false;
   document.addEventListener('keydown', e => {
     if (e.code !== 'Space' || !stream || e.repeat) return;
+    // وقتی داخل کادر چت یا هر ورودی متنی هستید، Space فقط فاصله تایپ می‌کند
     if (/^(INPUT|TEXTAREA|BUTTON)$/.test(document.activeElement.tagName) && document.activeElement !== document.body) {
       if (document.activeElement.type !== 'checkbox' && document.activeElement.id !== 'ptt') return;
     }
@@ -504,7 +594,8 @@
     try { me && me.destroy(); } catch (e) {}
     try { stream && stream.getTracks().forEach(t => t.stop()); } catch (e) {}
     try { wakeLock && wakeLock.release(); } catch (e) {}
-    location.reload();
+    clearChat();
+    location.reload();   // با بارگذاری مجدد، همه‌ی پیام‌ها کاملاً از حافظه پاک می‌شوند
   });
   window.addEventListener('beforeunload', () => {
     leaving = true;
